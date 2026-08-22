@@ -1,4 +1,4 @@
-[English](README_CN) | 中文
+[English](README_EN) | 中文
 
 # mcp-websearch-ai
 
