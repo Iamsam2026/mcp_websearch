@@ -1,4 +1,4 @@
-[中文](README.CN) | English
+[中文](README_CN.md) | English
 
 
 > **Note**: This English version is AI-translated for reference only. The original Chinese README (`README.md` or `README_CN.md`) is the authoritative source. Please refer to it for the most accurate and up-to-date information.
