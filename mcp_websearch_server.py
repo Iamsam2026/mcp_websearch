@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-MCP WebSearch + AISummary Server（最终版 v2.0）
+MCP WebSearch + AISummary Server（最终版 v1.0）
 ==============================================
 功能：web_search / fetch_webpage / ai_summarize / set_ai_config /
       get_tutorial / test_api / search_and_summarize
@@ -48,7 +48,7 @@ if sys.stdout and hasattr(sys.stdout, 'buffer') and not hasattr(sys.stdout, '_ut
 
 # ========== 配置区 ==========
 MCP_SERVER_NAME = "mcp-websearch-ai"
-MCP_SERVER_VERSION = "2.0.0"
+MCP_SERVER_VERSION = "1.0.0"
 SEARCH_TIMEOUT = 15      # Bing搜索/网页抓取 超时（秒）
 AI_TIMEOUT = 300         # AI 模型返回 超时（秒）
 
