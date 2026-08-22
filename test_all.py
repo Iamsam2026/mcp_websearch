@@ -1,36 +1,36 @@
 # -*- coding: utf-8 -*-
 """
 ============================================================
-MCP 全量总测试（v2.0）
+MCP 全量总测试（v2.0）         |  MCP Full Test Suite (v2.0)
 ============================================================
-流程：
-  1. 依次运行 text_client.py（7 项功能测试，不产生 logs）
-  2. 运行 text_isolated.py（隔离补搜测试，产生完整 logs）
-  3. 检查 logs/ 目录：区分「完整日志」与「未触发总结日志」，
-     只要存在至少一个完整日志文件夹（含 round_*_AI思考与决策 + 99_最终结果 且非空）
-     即判定通过
+流程：                          |  Workflow:
+  1. 依次运行 text_client.py   |  1. Run text_client.py (7 functional tests, no logs)
+     （7 项功能测试，不产生 logs）|  2. Run text_isolated.py (isolated refinement test, generates full logs)
+  2. 运行 text_isolated.py     |  3. Check logs/ directory
+     （隔离补搜测试，产生完整 logs）|  4. Output summary
+  3. 检查 logs/ 目录
   4. 汇总输出
 
-v2.0 修复：
-  - 日志检查宽容化：未触发总结的文件夹（仅 00+99_结果_未触发）标记为"正常跳过"，
-    不再误判为失败
-  - 自动识别 text_/test_ 前缀命名
+v2.0 修复：                     |  v2.0 Fixes:
+  - 日志检查宽容化              |  - Log check relaxed
+  - 自动识别 text_/test_ 前缀   |  - Auto-recognizes text_/test_ prefix
 
-用法：
-  python text_all.py
+用法：                          |  Usage:
+  python text_all.py            |  python text_all.py
 """
 import subprocess, sys, os, glob, json
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_ROOT = os.path.join(BASE_DIR, "logs")
 
-# 强制 UTF-8 输出
+# 强制 UTF-8 输出 / Force UTF-8 output
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 
 def find_script(*names):
+    """查找脚本文件（支持多个候选名称） / Find script by trying multiple possible names."""
     for n in names:
         p = os.path.join(BASE_DIR, n)
         if os.path.isfile(p):
@@ -39,6 +39,7 @@ def find_script(*names):
 
 
 def run_script(display_name, candidates, timeout=900):
+    """运行脚本并捕获输出 / Run a script and capture its output."""
     path = find_script(*candidates)
     print("\n" + "=" * 66)
     print("▶ 运行 %s ..." % display_name)
@@ -65,7 +66,12 @@ def run_script(display_name, candidates, timeout=900):
 
 
 def check_logs():
-    """检查 logs 目录：宽容化判定"""
+    """
+    检查 logs 目录：宽容化判定
+    Check logs directory with relaxed criteria.
+    - 完整日志：含 AI思考与决策 + 99_最终结果 且非空 / Complete log: contains AI思考与决策 + 99_最终结果 with content
+    - 跳过日志：仅 00 + 99_结果_未触发（正常跳过） / Skipped: only 00 + 99_结果_未触发 (normal skip)
+    """
     print("\n" + "=" * 66)
     print("🔍 检查 logs 日志目录")
     print("=" * 66)
@@ -80,18 +86,17 @@ def check_logs():
         print("  （说明 search_and_summarize 未被调用，或调用时 max_refine_rounds=0）")
         return False
 
-    complete_count = 0      # 完整日志（含 AI思考与决策 + 最终结果）
-    skip_count = 0          # 未触发总结的日志（正常跳过）
-    empty_file_count = 0    # 空文件数
+    complete_count = 0      # 完整日志 / Complete logs
+    skip_count = 0          # 未触发总结的日志（正常跳过）/ Not-triggered logs (normal skip)
+    empty_file_count = 0    # 空文件数 / Empty files count
     print("  ✅ 找到 %d 个日志文件夹：" % len(folders))
 
     for f in folders:
         files = os.listdir(f)
         has_decision = any("AI思考与决策" in fn for fn in files)
         has_final = any("99_最终结果" in fn for fn in files)
-        has_round_search = any("round_" in fn and "搜索" in fn for fn in files)
 
-        # 检查空文件
+        # 检查空文件 / Check for empty files
         for fn in files:
             fp = os.path.join(f, fn)
             try:
@@ -104,7 +109,7 @@ def check_logs():
         if has_decision and has_final:
             complete_count += 1
             print("    · %s/  （%d 个文件）✅ 完整日志" % (os.path.basename(f), len(files)))
-            # 展示 AI 思考决策
+            # 展示 AI 思考决策 / Preview AI decision
             for fn in files:
                 if "AI思考与决策" in fn:
                     fp = os.path.join(f, fn)
@@ -123,7 +128,6 @@ def check_logs():
             skip_count += 1
             print("    · %s/  （%d 个文件）⏭️ 非完整日志（未触发总结/中间路径，正常跳过）"
                   % (os.path.basename(f), len(files)))
-            # 列出该文件夹内的文件供参考
             for fn in files:
                 print("        - %s" % fn)
 
@@ -132,6 +136,7 @@ def check_logs():
           (complete_count, skip_count, empty_file_count))
 
     # 判定：至少 1 个完整日志 + 无空文件 = 通过
+    # Pass: at least 1 complete log + no empty files
     ok = (complete_count >= 1) and (empty_file_count == 0)
     if ok:
         print("  ✅ 日志检查通过：存在完整思考日志且内容非空")
@@ -149,16 +154,16 @@ def main():
     print("  目录：%s" % BASE_DIR)
     print("=" * 66)
 
-    # 1. 功能测试
+    # 1. 功能测试 / Functional tests
     r1 = run_script("text_client.py（7项功能测试）", ["text_client.py", "test_client.py"])
 
-    # 2. 隔离补搜测试
+    # 2. 隔离补搜测试 / Isolated refinement test
     r2 = run_script("text_isolated.py（隔离补搜测试）", ["text_isolated.py", "test_isolated.py"])
 
-    # 3. 检查日志
+    # 3. 检查日志 / Check logs
     log_ok = check_logs()
 
-    # 4. 汇总
+    # 4. 汇总 / Summary
     print("\n" + "=" * 66)
     print("  汇总结果")
     print("=" * 66)
